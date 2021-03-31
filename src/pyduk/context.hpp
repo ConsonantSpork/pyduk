@@ -1,3 +1,5 @@
+#pragma once
+
 #include <duktape.h>
 #include <string>
 #include <pyduk.hpp>
