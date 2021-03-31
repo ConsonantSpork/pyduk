@@ -34,15 +34,15 @@ namespace pyduk {
             case DUK_TYPE_POINTER:
             case DUK_TYPE_LIGHTFUNC:
             default:
-                throw new ConversionException("Unable to convert value");
+                throw ConversionException("Unable to convert value");
         }
     }
 
     bpy::object Context::top_object_to_bpyobj() {
-        throw new ConversionException("Unable to convert value");
+        throw ConversionException("Unable to convert value");
     }
 
     bpy::object Context::top_buffer_to_bpyobj() {
-        throw new ConversionException("Unable to convert value");
+        throw ConversionException("Unable to convert value");
     }
 }
