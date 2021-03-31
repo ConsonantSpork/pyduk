@@ -13,7 +13,8 @@ namespace pyduk {
     }
 
     bpy::object Context::run(std::string source) {
-        duk_eval_string(ctx, source.c_str());
+        if(duk_peval_string(ctx, source.c_str()))
+            throw RuntimeException("Runtime error");
         return top_to_bpyobj();
     }
 

@@ -2,10 +2,13 @@
 #include "exceptions.hpp"
 
 namespace pyduk {
-    ConversionException::ConversionException(std::string message) : msg(message)
+    DukException::DukException(std::string message) : msg(message)
     {}
 
-    const char* ConversionException::what() const throw() {
+    DukException::~DukException()
+    {}  // Implement virtual destructor so derived classes do not have to
+
+    const char* DukException::what() const throw() {
         char* ret = new char[msg.length() + 1];
         strcpy(ret, msg.c_str());
         return ret;
