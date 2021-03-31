@@ -17,3 +17,12 @@ if(NOT(${MODULE_ONLY}))
     add_subdirectory(${PROJECT_SOURCE_DIR}/test)
   endif()
 endif()
+
+install(TARGETS pyduk
+  CONFIGURATIONS Debug
+  LIBRARY DESTINATION ${PROJECT_BINARY_DIR}/debug/lib
+  )
+
+install(TARGETS pyduk
+  CONFIGURATIONS Release MinSizeRel RelWithDebugInfo
+  LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/release/lib)

@@ -1,6 +1,9 @@
 find_package(Boost COMPONENTS python REQUIRED)
 find_package(PythonLibs REQUIRED)
-add_library(pyduk SHARED pyduk.cpp)
+add_library(pyduk SHARED
+  pyduk.cpp
+  context.cpp
+  exceptions.cpp)
 
 set(PYTHON_MODULE_NAME ${CMAKE_PROJECT_NAME})
 set(PYTHON_MODULE_VERSION_MINOR ${pyduk_VERSION_MINOR})
@@ -11,17 +14,17 @@ set_target_properties(pyduk PROPERTIES
   PREFIX ""
   )
 
+get_target_property(DUKTAPE_SOURCE_DIR duktape SOURCE_DIR)
 target_include_directories(pyduk
   PUBLIC
+  ${DUKTAPE_SOURCE_DIR}
   ${Boost_INCLUDE_DIRECTORIES}
   ${PYTHON_INCLUDE_DIRS}
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/lib/
-  ${PROJECT_BINARY_DIR}/src/pyduk
+  ${CMAKE_CURRENT_BINARY_DIR}  # for configured header file pyduk.hpp
   )
 target_link_libraries(pyduk
-  PRIVATE
+  PUBLIC
   ${Boost_PYTHON_LIBRARY}
-  ${Python_LIBRARIES}
+  ${PYTHON_LIBRARY}
   duktape
   )
