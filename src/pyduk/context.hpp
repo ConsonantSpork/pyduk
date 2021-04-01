@@ -33,8 +33,8 @@ namespace pyduk {
         private:
             duk_context* ctx;
 
-            bpy::object top_to_bpyobj();
-            bpy::object top_object_to_bpyobj();
-            bpy::object top_buffer_to_bpyobj();
+            bpy::object idx_to_bpyobj(duk_size_t idx);
+            bpy::object object_idx_to_bpyobj(duk_size_t idx);
+            bpy::object buffer_idx_to_bpyobj(duk_size_t idx);
     };
 }
