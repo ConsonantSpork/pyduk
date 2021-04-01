@@ -36,6 +36,9 @@ namespace pyduk {
             bpy::object idx_to_bpyobj(duk_size_t idx);
             bpy::object number_idx_to_bpyobj(duk_size_t idx);
             bpy::object object_idx_to_bpyobj(duk_size_t idx);
+            bpy::object array_idx_to_bpyobj(duk_size_t idx);
             bpy::object buffer_idx_to_bpyobj(duk_size_t idx);
+
+            bool object_is_array(duk_size_t idx);
     };
 }
