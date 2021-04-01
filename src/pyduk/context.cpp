@@ -25,7 +25,7 @@ namespace pyduk {
             case DUK_TYPE_BOOLEAN:
                 return bpy::object((bool) duk_get_boolean(ctx, idx));
             case DUK_TYPE_NUMBER:
-                return bpy::object((float) duk_get_number(ctx, idx));
+                return number_idx_to_bpyobj(idx);
             case DUK_TYPE_STRING:
                 return bpy::object(std::string(duk_get_string(ctx, idx)));
             case DUK_TYPE_OBJECT:
@@ -39,6 +39,12 @@ namespace pyduk {
         }
     }
 
+    bpy::object Context::number_idx_to_bpyobj(duk_size_t idx) {
+        double num = duk_get_number(ctx, idx);
+        if (round(num) == num)
+            return bpy::object((int32_t) num);
+        return bpy::object(num);
+    }
     bpy::object Context::object_idx_to_bpyobj(duk_size_t idx) {
         bpy::dict ret;
         duk_enum(ctx, idx, 0);

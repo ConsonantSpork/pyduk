@@ -34,6 +34,7 @@ namespace pyduk {
             duk_context* ctx;
 
             bpy::object idx_to_bpyobj(duk_size_t idx);
+            bpy::object number_idx_to_bpyobj(duk_size_t idx);
             bpy::object object_idx_to_bpyobj(duk_size_t idx);
             bpy::object buffer_idx_to_bpyobj(duk_size_t idx);
     };
