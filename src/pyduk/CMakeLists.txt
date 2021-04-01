@@ -5,14 +5,14 @@ add_library(pyduk SHARED
   context.cpp
   exceptions.cpp)
 
-set(PYTHON_MODULE_NAME ${CMAKE_PROJECT_NAME})
+set(MODULE_PREFIX "_")
+set_target_properties(pyduk PROPERTIES
+  PREFIX ${MODULE_PREFIX}
+  )
+set(PYTHON_MODULE_NAME "${MODULE_PREFIX}${CMAKE_PROJECT_NAME}")
 set(PYTHON_MODULE_VERSION_MINOR ${pyduk_VERSION_MINOR})
 set(PYTHON_MODULE_VERSION_MAJOR ${pyduk_VERSION_MAJOR})
 configure_file(pyduk.hpp.in pyduk.hpp @ONLY)
-
-set_target_properties(pyduk PROPERTIES
-  PREFIX ""
-  )
 
 get_target_property(DUKTAPE_SOURCE_DIR duktape SOURCE_DIR)
 target_include_directories(pyduk
