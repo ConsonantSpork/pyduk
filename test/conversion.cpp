@@ -30,6 +30,31 @@ TEST_F(PyDukContext, boolean_object_conversion) {
               boost::python::object(true));
 }
 
+TEST_F(PyDukContext, empty_object_conversion) {
+    boost::python::dict expected;
+    EXPECT_EQ(context.run("var d = {}; d;"),
+              expected);
+}
+
+TEST_F(PyDukContext, empty_list_conversion) {
+    boost::python::list expected;
+    EXPECT_EQ(context.run("var d = []; d;"),
+              expected);
+}
+
+TEST_F(PyDukContext, list_conversion) {
+    boost::python::list expected;
+    boost::python::list inner;
+    inner.append("inner");
+    inner.append("list");
+    expected.append(1);
+    expected.append(2.0);
+    expected.append("hello");
+    expected.append(inner);
+    EXPECT_EQ(context.run("var d = [1, 2.0, 'hello', ['inner', 'list']]; d;"),
+              expected);
+}
+
 TEST_F(PyDukContext, simple_object_conversion) {
     boost::python::dict expected;
     expected["hello"] = "world";
