@@ -55,6 +55,25 @@ TEST_F(PyDukContext, list_conversion) {
               expected);
 }
 
+TEST_F(PyDukContext, number_object) {
+    EXPECT_EQ(context.run("new Number(12.0)"),
+              boost::python::object(12));
+}
+
+TEST_F(PyDukContext, number_object_float) {
+    EXPECT_EQ(context.run("new Number(12.4)"),
+              boost::python::object(12.4));
+}
+
+TEST_F(PyDukContext, buffer_conversion) {
+    boost::python::list expected;
+    expected.append(1);
+    expected.append(2);
+    expected.append(3);
+    EXPECT_EQ(context.run("new Uint8Array([1, 2, 3]).buffer"),
+              expected);
+}
+
 TEST_F(PyDukContext, simple_object_conversion) {
     boost::python::dict expected;
     expected["hello"] = "world";

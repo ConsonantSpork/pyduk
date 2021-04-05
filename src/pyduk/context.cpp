@@ -1,3 +1,4 @@
+#include <iostream>
 #include "context.hpp"
 #include "exceptions.hpp"
 #include <string>
@@ -15,12 +16,16 @@ namespace pyduk {
     }
 
     bpy::object Context::run(std::string source) {
-        if(duk_peval_string(ctx, source.c_str()))
-            throw RuntimeException("Runtime error");
+        if(duk_peval_string(ctx, source.c_str())) {
+            throw RuntimeException("Runtime error: " + std::string(duk_safe_to_string(ctx, -1)));
+            duk_pop(ctx);
+        }
         return idx_to_bpyobj(-1);
     }
 
     bpy::object Context::idx_to_bpyobj(duk_size_t idx) {
+        idx = duk_normalize_index(ctx, idx);
+
         switch(duk_get_type(ctx, idx)) {
             case DUK_TYPE_UNDEFINED: case DUK_TYPE_NULL:
                 return bpy::object();
@@ -30,7 +35,13 @@ namespace pyduk {
                 return number_idx_to_bpyobj(idx);
             case DUK_TYPE_STRING:
                 return bpy::object(std::string(duk_get_string(ctx, idx)));
-            case DUK_TYPE_OBJECT:  // This case for arrays too
+            case DUK_TYPE_OBJECT:
+                if (duk_is_array(ctx, idx))
+                    return array_idx_to_bpyobj(idx);
+                if (idx_obj_instanceof("Boolean", idx))
+                    return boolean_obj_idx_to_bpyobj(idx);
+                if (idx_obj_instanceof("Number", idx))
+                    return number_obj_idx_to_bpyobj(idx);
                 return object_idx_to_bpyobj(idx);
             case DUK_TYPE_BUFFER:
                 return buffer_idx_to_bpyobj(idx);
@@ -41,31 +52,34 @@ namespace pyduk {
         }
     }
 
-    bpy::object Context::number_idx_to_bpyobj(duk_size_t idx) {
-        double num = duk_get_number(ctx, idx);
+    bpy::object Context::boolean_obj_idx_to_bpyobj(duk_size_t idx) {
+        std::string res = duk_to_string(ctx, idx);
+        return bpy::object(res == "true");
+    }
+
+    bpy::object round_double(double num) {
         if (round(num) == num)
             return bpy::object((int32_t) num);
         return bpy::object(num);
     }
 
-    bool isFloat(std::string myString) {
-        std::istringstream iss(myString);
-        float f;
-        iss >> std::noskipws >> f;
-        return iss.eof() && !iss.fail();
+    bpy::object Context::number_obj_idx_to_bpyobj(duk_size_t idx) {
+        return round_double(duk_to_number(ctx, idx));
     }
 
-    bool Context::object_is_array(duk_size_t idx) {
-        duk_get_prop_string(ctx, idx, "length");
-        bool is_array = !duk_is_undefined(ctx, -1);
+    bool Context::idx_obj_instanceof(const std::string test_type, duk_size_t idx) {
+        if (duk_peval_string(ctx, test_type.c_str()))
+            return false;
+        bool res = duk_instanceof(ctx, idx, -1);
         duk_pop(ctx);
-        return is_array;
+        return res;
+    }
+
+    bpy::object Context::number_idx_to_bpyobj(duk_size_t idx) {
+        return round_double(duk_get_number(ctx, idx));
     }
 
     bpy::object Context::object_idx_to_bpyobj(duk_size_t idx) {
-        if (object_is_array(idx))
-            return array_idx_to_bpyobj(idx);
-
         bpy::dict ret;
         duk_enum(ctx, idx, 0);
         while(duk_next(ctx, -1, 1 /* get key and value */)) {
