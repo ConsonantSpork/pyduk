@@ -65,15 +65,51 @@ TEST_F(PyDukContext, number_object_float) {
               boost::python::object(12.4));
 }
 
-TEST_F(PyDukContext, buffer_conversion) {
-    boost::python::list expected;
-    expected.append(1);
-    expected.append(2);
-    expected.append(3);
-    EXPECT_EQ(context.run("new Uint8Array([1, 2, 3]).buffer"),
-              expected);
+TEST_F(PyDukContext, array_buffer_conversion) {
+    EXPECT_EQ(context.run("new Int8Array([258, 2, 0, -2]).buffer"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x02\x02\x00\xfe", 4)));
 }
 
+TEST_F(PyDukContext, uint8_array_conversion) {
+    EXPECT_EQ(context.run("new Uint8Array([258, 2, 0, -2]).buffer"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x02\x02\x00\xfe", 4)));
+}
+
+TEST_F(PyDukContext, int8_array_conversion) {
+    EXPECT_EQ(context.run("new Int8Array([130, -2, 3, 256, 0, 1])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x82\xfe\x03\x00\x00\x01", 6)));
+}
+
+TEST_F(PyDukContext, uint16_array_conversion) {
+    EXPECT_EQ(context.run("new Uint16Array([256, -1])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x00\x01\xff\xff", 4)));
+}
+
+TEST_F(PyDukContext, int16_array_conversion) {
+    EXPECT_EQ(context.run("new Int16Array([256, -1])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x00\x01\xff\xff", 4)));
+}
+
+TEST_F(PyDukContext, uint32_array_conversion) {
+    EXPECT_EQ(context.run("new Uint32Array([65536, -1])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x00\x00\x01\x00\xff\xff\xff\xff", 8)));
+}
+
+TEST_F(PyDukContext, int32_array_conversion) {
+    EXPECT_EQ(context.run("new Int32Array([65536, -1])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x00\x00\x01\x00\xff\xff\xff\xff", 8)));
+}
+
+
+TEST_F(PyDukContext, float32_array_conversion) {
+    EXPECT_EQ(context.run("new Float32Array([12.3])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\xcd\xcc\x44\x41", 4)));
+}
+
+TEST_F(PyDukContext, float64_array_conversion) {
+    EXPECT_EQ(context.run("new Float64Array([12.3])"),
+              boost::python::handle<>(PyByteArray_FromStringAndSize("\x9a\x99\x99\x99\x99\x99\x28\x40", 8)));
+}
 TEST_F(PyDukContext, simple_object_conversion) {
     boost::python::dict expected;
     expected["hello"] = "world";

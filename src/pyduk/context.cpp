@@ -42,6 +42,23 @@ namespace pyduk {
                     return boolean_obj_idx_to_bpyobj(idx);
                 if (idx_obj_instanceof("Number", idx))
                     return number_obj_idx_to_bpyobj(idx);
+                if (idx_obj_instanceof("Uint8Array", idx))
+                    return uint8_array_to_bpyobj(idx);
+                if (idx_obj_instanceof("Int8Array", idx)
+                    || idx_obj_instanceof("Uint16Array", idx)
+                    || idx_obj_instanceof("Int16Array", idx)
+                    || idx_obj_instanceof("Uint32Array", idx)
+                    || idx_obj_instanceof("Int32Array", idx)
+                    || idx_obj_instanceof("Float32Array", idx)
+                    || idx_obj_instanceof("Float64Array", idx))
+                {
+                    typed_array_to_uint8_array(idx);
+                    return uint8_array_to_bpyobj(idx);
+                }
+                if (idx_obj_instanceof("ArrayBuffer", idx)) {
+                    array_buffer_to_uint8_array(idx);
+                    return uint8_array_to_bpyobj(idx);
+                }
                 return object_idx_to_bpyobj(idx);
             case DUK_TYPE_BUFFER:
                 return buffer_idx_to_bpyobj(idx);
@@ -102,6 +119,49 @@ namespace pyduk {
     }
 
     bpy::object Context::buffer_idx_to_bpyobj(duk_size_t idx) {
-        return array_idx_to_bpyobj(idx);
+        throw ConversionException("Buffer conversion not implemented");
+    }
+
+    // helper function for ArrayBuffer/TypedArray conversions
+    void Context::call_single_arg_constructor(duk_size_t result_destination) {
+        // Call constructor, result value gets put on top
+        duk_new(ctx, 1);
+        // Put result in required location and whatever is there already to top
+        duk_swap(ctx, result_destination, -1);
+        // Pop what was in required location
+        duk_pop(ctx);
+    }
+
+    void Context::array_buffer_to_uint8_array(duk_size_t idx) {
+        duk_eval_string(ctx, "Uint8Array");
+        duk_dup(ctx, idx);
+        call_single_arg_constructor(idx);
+    }
+
+    void Context::typed_array_to_uint8_array(duk_size_t idx) {
+        duk_eval_string(ctx, "Uint8Array");
+        if(!duk_get_prop_string(ctx, idx, "buffer"))
+            throw ConversionException("Could not convert TypedArray: property 'buffer' not found.");
+        call_single_arg_constructor(idx);
+    }
+
+    duk_size_t Context::get_array_length(duk_size_t idx) {
+        duk_get_prop_string(ctx, idx, "length");
+        duk_size_t ret = duk_get_uint(ctx, -1);
+        duk_pop(ctx);
+        return ret;
+    }
+
+    bpy::object Context::uint8_array_to_bpyobj(duk_size_t idx) {
+        duk_size_t arr_length = get_array_length(idx);
+        duk_enum(ctx, idx, DUK_ENUM_ARRAY_INDICES_ONLY);
+        char* bytes = new char[arr_length];
+        for (int i = 0; duk_next(ctx, -1, 1 /* get key and value */); i++) {
+            uint8_t byte_uint = duk_get_uint(ctx, -1);
+            bytes[i] = static_cast<char>(byte_uint);
+            duk_pop_2(ctx);
+        }
+        duk_pop(ctx);
+        return bpy::object(bpy::handle<>(PyByteArray_FromStringAndSize(bytes, arr_length)));
     }
 }
