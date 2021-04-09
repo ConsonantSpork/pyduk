@@ -15,7 +15,9 @@ namespace pyduk {
      * @warning Should not be used in a multi-threaded environment. */
     class Context {
         public:
-            Context();
+            static const int USE_GLOBAL_POLYFILL;
+
+            Context(int flags);
             Context(const Context&) = delete;
             Context(const Context&&) = delete;
             ~Context();

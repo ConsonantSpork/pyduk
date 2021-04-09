@@ -30,13 +30,14 @@ void translate_duk_runtime_exception(const pyduk::RuntimeException& exc) {
 
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME) {
-  bpy::class_<pyduk::Context, boost::noncopyable>("Context")
+  bpy::class_<pyduk::Context, boost::noncopyable>("Context", bpy::init<int>())
     .def("run", &pyduk::Context::run);
 
   duk_conversion_error_type = PyErr_NewException(PYTHON_MODULE_NAME_STRING ".ConversionError", PyExc_RuntimeError, NULL);
   duk_runtime_exception_type = PyErr_NewException(PYTHON_MODULE_NAME_STRING ".JSRuntimeError", PyExc_Exception, NULL);
   bpy::scope().attr("ConversionError") = bpy::handle<>(duk_conversion_error_type);
   bpy::scope().attr("JSRuntimeError") = bpy::handle<>(duk_runtime_exception_type);
+  bpy::scope().attr("USE_GLOBAL_POLYFILL") = pyduk::Context::USE_GLOBAL_POLYFILL;
   bpy::register_exception_translator<pyduk::ConversionException>(translate_duk_conversion_exception);
   bpy::register_exception_translator<pyduk::RuntimeException>(translate_duk_runtime_exception);
 }

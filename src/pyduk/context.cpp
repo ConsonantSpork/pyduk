@@ -7,8 +7,12 @@
 namespace bpy = boost::python;
 
 namespace pyduk {
-    Context::Context() {
+    const int Context::USE_GLOBAL_POLYFILL = 1;
+
+    Context::Context(const int flags) {
         ctx = duk_create_heap_default();
+        if (flags & Context::USE_GLOBAL_POLYFILL)
+            duk_eval_string(ctx, "var global = new Function('return this;')();");
     }
 
     Context::~Context() {
