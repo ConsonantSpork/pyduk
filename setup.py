@@ -1,8 +1,6 @@
 from setuptools import find_packages, setup
 from cmake_build_extension import BuildExtension, CMakeExtension
 
-from os import path
-
 setup(
     name='pyduk',
     version='0.1',
