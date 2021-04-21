@@ -2,6 +2,7 @@
 
 #include <string>
 #include <exception>
+#include <utility>
 
 namespace pyduk {
     /** @brief Base exception for  */
@@ -10,14 +11,14 @@ namespace pyduk {
             /** @brief Constructs exception from a message.
              *
              * @param msg message describing exception. */
-            DukException(std::string msg);
+            explicit DukException(std::string msg);
             virtual ~DukException() = 0;  // Prohibit class instantiation. Note that destructor is
                                           // still implemented, so derived classes do not have to do it.
 
             /** @brief Get exception description.
              *
              * @returns String describing exception. */
-            const char* what() const throw();
+            virtual const char* what() const noexcept;
 
         private:
             std::string msg;
@@ -26,12 +27,12 @@ namespace pyduk {
     /** @brief Exception thrown on unsuccessful conversion from JavaScript types to Python objects. */
     class ConversionException : public DukException {
         public:
-            ConversionException(std::string msg) : DukException(msg) {}
+            explicit ConversionException(std::string msg) : DukException(std::move(msg)) {}
     };
 
     /** @brief Exception thrown on errors when running JavaScript. */
     class RuntimeException : public DukException {
         public:
-            RuntimeException(std::string msg) : DukException(msg) {}
+            explicit RuntimeException(std::string msg) : DukException(std::move(msg)) {}
     };
 }

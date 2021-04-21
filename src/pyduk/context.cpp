@@ -1,8 +1,6 @@
-#include <iostream>
+#include <string>
 #include "context.hpp"
 #include "exceptions.hpp"
-#include <string>
-#include <sstream>
 
 namespace bpy = boost::python;
 
@@ -21,13 +19,14 @@ namespace pyduk {
 
     bpy::object Context::run(std::string source) {
         if(duk_peval_string(ctx, source.c_str())) {
-            throw RuntimeException("Runtime error: " + std::string(duk_safe_to_string(ctx, -1)));
+            std::string error = duk_safe_to_string(ctx, -1);
             duk_pop(ctx);
+            throw RuntimeException("Runtime error: " + error);
         }
         return idx_to_bpyobj(-1);
     }
 
-    bpy::object Context::idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::idx_to_bpyobj(duk_idx_t idx) {
         idx = duk_normalize_index(ctx, idx);
 
         switch(duk_get_type(ctx, idx)) {
@@ -73,7 +72,7 @@ namespace pyduk {
         }
     }
 
-    bpy::object Context::boolean_obj_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::boolean_obj_idx_to_bpyobj(duk_idx_t idx) {
         std::string res = duk_to_string(ctx, idx);
         return bpy::object(res == "true");
     }
@@ -84,11 +83,11 @@ namespace pyduk {
         return bpy::object(num);
     }
 
-    bpy::object Context::number_obj_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::number_obj_idx_to_bpyobj(duk_idx_t idx) {
         return round_double(duk_to_number(ctx, idx));
     }
 
-    bool Context::idx_obj_instanceof(const std::string test_type, duk_size_t idx) {
+    bool Context::idx_obj_instanceof(const std::string& test_type, duk_idx_t idx) {
         if (duk_peval_string(ctx, test_type.c_str()))
             return false;
         bool res = duk_instanceof(ctx, idx, -1);
@@ -96,11 +95,11 @@ namespace pyduk {
         return res;
     }
 
-    bpy::object Context::number_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::number_idx_to_bpyobj(duk_idx_t idx) {
         return round_double(duk_get_number(ctx, idx));
     }
 
-    bpy::object Context::object_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::object_idx_to_bpyobj(duk_idx_t idx) {
         bpy::dict ret;
         duk_enum(ctx, idx, 0);
         while(duk_next(ctx, -1, 1 /* get key and value */)) {
@@ -111,7 +110,7 @@ namespace pyduk {
         return ret;
     }
 
-    bpy::object Context::array_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::array_idx_to_bpyobj(duk_idx_t idx) {
         bpy::list ret;
         duk_size_t n = duk_get_length(ctx, idx);
         for (duk_size_t i = 0; i < n; i++) {
@@ -122,12 +121,12 @@ namespace pyduk {
         return ret;
     }
 
-    bpy::object Context::buffer_idx_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::buffer_idx_to_bpyobj(duk_idx_t idx) {
         throw ConversionException("Buffer conversion not implemented");
     }
 
     // helper function for ArrayBuffer/TypedArray conversions
-    void Context::call_single_arg_constructor(duk_size_t result_destination) {
+    void Context::call_single_arg_constructor(duk_idx_t result_destination) {
         // Call constructor, result value gets put on top
         duk_new(ctx, 1);
         // Put result in required location and whatever is there already to top
@@ -136,27 +135,27 @@ namespace pyduk {
         duk_pop(ctx);
     }
 
-    void Context::array_buffer_to_uint8_array(duk_size_t idx) {
+    void Context::array_buffer_to_uint8_array(duk_idx_t idx) {
         duk_eval_string(ctx, "Uint8Array");
         duk_dup(ctx, idx);
         call_single_arg_constructor(idx);
     }
 
-    void Context::typed_array_to_uint8_array(duk_size_t idx) {
+    void Context::typed_array_to_uint8_array(duk_idx_t idx) {
         duk_eval_string(ctx, "Uint8Array");
         if(!duk_get_prop_string(ctx, idx, "buffer"))
             throw ConversionException("Could not convert TypedArray: property 'buffer' not found.");
         call_single_arg_constructor(idx);
     }
 
-    duk_size_t Context::get_array_length(duk_size_t idx) {
+    duk_size_t Context::get_array_length(duk_idx_t idx) {
         duk_get_prop_string(ctx, idx, "length");
         duk_size_t ret = duk_get_uint(ctx, -1);
         duk_pop(ctx);
         return ret;
     }
 
-    bpy::object Context::uint8_array_to_bpyobj(duk_size_t idx) {
+    bpy::object Context::uint8_array_to_bpyobj(duk_idx_t idx) {
         duk_size_t arr_length = get_array_length(idx);
         duk_enum(ctx, idx, DUK_ENUM_ARRAY_INDICES_ONLY);
         char* bytes = new char[arr_length];
