@@ -44,7 +44,7 @@ namespace pyduk {
             bpy::object number_obj_idx_to_bpyobj(duk_idx_t idx);
             bpy::object uint8_array_to_bpyobj(duk_idx_t idx);
 
-            void call_single_arg_constructor(duk_idx_t result_destinaion);
+            void call_single_arg_constructor(duk_idx_t result_destination);
             void array_buffer_to_uint8_array(duk_idx_t idx);
             void typed_array_to_uint8_array(duk_idx_t idx);
             duk_size_t get_array_length(duk_idx_t idx);
