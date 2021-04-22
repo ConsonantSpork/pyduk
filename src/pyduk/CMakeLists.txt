@@ -6,7 +6,9 @@ add_library(pyduk SHARED
         context.cpp
         context.hpp
         exceptions.cpp
-        exceptions.hpp)
+        exceptions.hpp
+        i_circular_reference_tracker.hpp
+        circular_reference_tracker.hpp)
 
 set(MODULE_PREFIX "_")
 set_target_properties(pyduk PROPERTIES

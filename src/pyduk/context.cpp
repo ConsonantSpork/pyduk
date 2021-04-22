@@ -10,44 +10,62 @@ namespace pyduk {
     Context::Context(const int flags) {
         ctx = duk_create_heap_default();
         if (flags & Context::USE_GLOBAL_POLYFILL)
-            duk_eval_string(ctx, "var global = new Function('return this;')();");
+            duk_eval_string(ctx, "var global = new Function('return this;')();");  // FIXME: this should be somewhere else
     }
 
     Context::~Context() {
         duk_destroy_heap(ctx);
     }
 
-    bpy::object Context::run(std::string source) {
+    bpy::object Context::run(const std::string& source) {
         if(duk_peval_string(ctx, source.c_str())) {
             std::string error = duk_safe_to_string(ctx, -1);
             duk_pop(ctx);
             throw RuntimeException("Runtime error: " + error);
         }
-        return idx_to_bpyobj(-1);
+        return idx_to_bpyobj_wrapper(-1);
+    }
+
+    bpy::object Context::idx_to_bpyobj_wrapper(duk_idx_t idx) {
+        bpy::object result = Context::idx_to_bpyobj(idx);
+        crt.clear();
+        return result;
+    }
+
+    uintptr_t Context::get_unique_repr(duk_idx_t idx) {
+        auto ptr = duk_get_heapptr(ctx, idx);
+        if (ptr == NULL) {
+            throw std::runtime_error("Value not heap allocated or invalid index.");
+        }
+        return reinterpret_cast<uintptr_t>(ptr);
     }
 
     bpy::object Context::idx_to_bpyobj(duk_idx_t idx) {
         idx = duk_normalize_index(ctx, idx);
-
+        bpy::object result;
         switch(duk_get_type(ctx, idx)) {
             case DUK_TYPE_UNDEFINED: case DUK_TYPE_NULL:
-                return bpy::object();
+                result = bpy::object();
+                break;
             case DUK_TYPE_BOOLEAN:
-                return bpy::object((bool) duk_get_boolean(ctx, idx));
+                result = bpy::object((bool) duk_get_boolean(ctx, idx));
+                break;
             case DUK_TYPE_NUMBER:
-                return number_idx_to_bpyobj(idx);
+                result = number_idx_to_bpyobj(idx);
+                break;
             case DUK_TYPE_STRING:
-                return bpy::object(std::string(duk_get_string(ctx, idx)));
+                result = bpy::object(std::string(duk_get_string(ctx, idx)));
+                break;
             case DUK_TYPE_OBJECT:
                 if (duk_is_array(ctx, idx))
-                    return array_idx_to_bpyobj(idx);
-                if (idx_obj_instanceof("Boolean", idx))
-                    return boolean_obj_idx_to_bpyobj(idx);
-                if (idx_obj_instanceof("Number", idx))
-                    return number_obj_idx_to_bpyobj(idx);
-                if (idx_obj_instanceof("Uint8Array", idx))
-                    return uint8_array_to_bpyobj(idx);
-                if (idx_obj_instanceof("Int8Array", idx)
+                    result = array_idx_to_bpyobj(idx);
+                else if (idx_obj_instanceof("Boolean", idx))
+                    result = boolean_obj_idx_to_bpyobj(idx);
+                else if (idx_obj_instanceof("Number", idx))
+                    result = number_obj_idx_to_bpyobj(idx);
+                else if (idx_obj_instanceof("Uint8Array", idx))
+                    result = uint8_array_to_bpyobj(idx);
+                else if (idx_obj_instanceof("Int8Array", idx)
                     || idx_obj_instanceof("Uint16Array", idx)
                     || idx_obj_instanceof("Int16Array", idx)
                     || idx_obj_instanceof("Uint32Array", idx)
@@ -56,20 +74,25 @@ namespace pyduk {
                     || idx_obj_instanceof("Float64Array", idx))
                 {
                     typed_array_to_uint8_array(idx);
-                    return uint8_array_to_bpyobj(idx);
+                    result = uint8_array_to_bpyobj(idx);
                 }
-                if (idx_obj_instanceof("ArrayBuffer", idx)) {
+                else if (idx_obj_instanceof("ArrayBuffer", idx)) {
                     array_buffer_to_uint8_array(idx);
-                    return uint8_array_to_bpyobj(idx);
+                    result = uint8_array_to_bpyobj(idx);
                 }
-                return object_idx_to_bpyobj(idx);
+                else {
+                    result = object_idx_to_bpyobj(idx);
+                }
+                break;
             case DUK_TYPE_BUFFER:
-                return buffer_idx_to_bpyobj(idx);
+                result = buffer_idx_to_bpyobj(idx);
+                break;
             case DUK_TYPE_POINTER:
             case DUK_TYPE_LIGHTFUNC:
             default:
                 throw ConversionException("Unable to convert value");
         }
+        return result;
     }
 
     bpy::object Context::boolean_obj_idx_to_bpyobj(duk_idx_t idx) {
@@ -100,7 +123,11 @@ namespace pyduk {
     }
 
     bpy::object Context::object_idx_to_bpyobj(duk_idx_t idx) {
+        auto ref = get_unique_repr(idx);
+        if(crt.reference_creates_cycle(ref))
+            return crt.get_by_reference(ref);
         bpy::dict ret;
+        crt.add_reference(ret, ref);
         duk_enum(ctx, idx, 0);
         while(duk_next(ctx, -1, 1 /* get key and value */)) {
             ret[idx_to_bpyobj(-2)] = idx_to_bpyobj(-1);
@@ -111,7 +138,12 @@ namespace pyduk {
     }
 
     bpy::object Context::array_idx_to_bpyobj(duk_idx_t idx) {
+        auto ref = get_unique_repr(idx);
+        if(crt.reference_creates_cycle(ref))
+            return crt.get_by_reference(ref);
         bpy::list ret;
+
+        crt.add_reference(ret, ref);
         duk_size_t n = duk_get_length(ctx, idx);
         for (duk_size_t i = 0; i < n; i++) {
             duk_get_prop_index(ctx, idx, i);

@@ -5,7 +5,7 @@ if(${GTest_FOUND})
           conversion.cpp
           context_fixture.hpp
           environment.hpp
-          )
+          circular_references.cpp)
 
   get_target_property(PYDUK_SOURCE_DIR pyduk SOURCE_DIR)
   target_include_directories(gtest
