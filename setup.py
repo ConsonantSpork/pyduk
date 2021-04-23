@@ -3,7 +3,7 @@ from cmake_build_extension import BuildExtension, CMakeExtension
 
 setup(
     name='pyduk',
-    version='0.1',
+    version='0.1.1',
     description='Duktape engine wrapper for Python 3',
     author="Dmitry Belov",
     author_email="dimabelov.tu99@gmail.com",
