@@ -1,4 +1,4 @@
-find_package(Boost COMPONENTS python REQUIRED)
+find_package(Boost COMPONENTS python3 REQUIRED)
 find_package(PythonLibs REQUIRED)
 add_library(pyduk SHARED
         pyduk.cpp
@@ -29,7 +29,7 @@ target_include_directories(pyduk
         )
 target_link_libraries(pyduk
         PUBLIC
-        ${Boost_PYTHON_LIBRARY}
+        ${Boost_LIBRARIES}
         ${PYTHON_LIBRARY}
         duktape
         )

@@ -1,0 +1,22 @@
+From fa353d357a6a431a05b29cda11f3b45cd05c24c5 Mon Sep 17 00:00:00 2001
+From: ConsonantSpork <dimabelov.tu99@gmail.com>
+Date: Thu, 24 Jun 2021 11:55:19 +0300
+Subject: [PATCH] Change boost component requirement from python3 to python
+
+---
+ src/pyduk/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pyduk/CMakeLists.txt b/src/pyduk/CMakeLists.txt
+index eecdb4d..a0aaf2f 100644
+--- a/src/pyduk/CMakeLists.txt
++++ b/src/pyduk/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-find_package(Boost COMPONENTS python3 REQUIRED)
++find_package(Boost COMPONENTS python REQUIRED)
+ find_package(PythonLibs REQUIRED)
+ add_library(pyduk SHARED
+         pyduk.cpp
+-- 
+2.32.0
+
